@@ -1,0 +1,4 @@
+shellwrap
+=========
+
+Subprocess wrapping utilities
