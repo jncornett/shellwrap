@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>__init__.py</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>__init__.py</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-keyword">import</span> os
+<span class="hljs-keyword">import</span> sys
+
+<span class="hljs-keyword">from</span> collections <span class="hljs-keyword">import</span> namedtuple
+<span class="hljs-keyword">from</span> subprocess <span class="hljs-keyword">import</span> Popen, PIPE, CalledProcessError
+<span class="hljs-keyword">from</span> threading <span class="hljs-keyword">import</span> Thread, Event, Lock
+<span class="hljs-keyword">from</span> time <span class="hljs-keyword">import</span> sleep
+
+Arguments = namedtuple(<span class="hljs-string">"Arguments"</span>, [<span class="hljs-string">"args"</span>, <span class="hljs-string">"kwargs"</span>])</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <h2 id="utility-functions">Utility Functions</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <h3 id="pluck">pluck</h3>
+<p>Pops the specified <code>keys</code> and corresponding values from the dictionary <code>d</code>
+and returns them as a new dictionary.</p>
+<p>Example:</p>
+<pre><code>d = {<span class="hljs-string">"A"</span>: <span class="hljs-number">1</span>, <span class="hljs-string">"B"</span>: <span class="hljs-number">2</span>, <span class="hljs-string">"C"</span>: <span class="hljs-number">3</span>}
+e = pluck(d, <span class="hljs-string">"A"</span>, <span class="hljs-string">"D"</span>)
+
+print(e) <span class="hljs-comment"># prints "{'A': 1}"</span>
+print(d) <span class="hljs-comment"># prints "{'B': 2, 'C': 3}"</span>
+</code></pre>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">pluck</span><span class="hljs-params">(d, *keys)</span>:</span>
+    _d = {}
+    <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> keys:
+        <span class="hljs-keyword">if</span> k <span class="hljs-keyword">in</span> d:
+            _d[k] = d.pop(k)
+
+    <span class="hljs-keyword">return</span> _d</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <h3 id="remap">remap</h3>
+<p>Creates a new dictionary based on <code>d</code> with the mapping <code>mapping</code>.
+<code>mapping</code> can be either a dictionary or a callable.</p>
+<p>Example:</p>
+<pre><code>d = {<span class="hljs-string">"A"</span>: <span class="hljs-number">1</span>, <span class="hljs-string">"B"</span>: <span class="hljs-number">2</span>}
+e = remap(d, {<span class="hljs-string">"A"</span>: <span class="hljs-string">"C"</span>})
+
+print(e) <span class="hljs-comment"># prints "{'C': 1, 'B': 2}"</span>
+
+f = remap(d, str.lower)
+print(f) <span class="hljs-comment"># prints "{'a': 1, 'b': 2}"</span>
+</code></pre>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">remap</span><span class="hljs-params">(d, mapping)</span>:</span>
+    <span class="hljs-keyword">if</span> hasattr(mapping, <span class="hljs-string">"get"</span>):
+        <span class="hljs-keyword">return</span> {mapping.get(k, k): v <span class="hljs-keyword">for</span> k, v <span class="hljs-keyword">in</span> d.items()}
+    <span class="hljs-keyword">else</span>:
+        <span class="hljs-keyword">return</span> {mapping(k) <span class="hljs-keyword">or</span> k: v <span class="hljs-keyword">for</span> k, v <span class="hljs-keyword">in</span> d.items()}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Strips the leading underscore on a string</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_strip_underscore</span><span class="hljs-params">(string)</span>:</span>
+    <span class="hljs-keyword">return</span> string.lstrip(<span class="hljs-string">"_"</span>)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <h2 id="processerror">ProcessError</h2>
+<p>Custom exception for SubprocessHelper errors accepts an instance of
+<code>ProcessWrapper</code>. ProcessError extracts relevant data from the process and 
+stores it in the <code>data</code> attribute.</p>
+<p>The data attribute contains the following fields:</p>
+<ul>
+<li><code>returncode</code> the returncode from the underlying process</li>
+<li><code>cmdline</code> the command line that the process was called with</li>
+<li><code>stderr</code> the STDERR output of the process
+If the process was wrapped with <code>ProcessWrapperWithTimeout</code>, two additional
+fields are available:</li>
+<li><code>timeout</code> the timeout value in seconds</li>
+<li><code>timed_out</code> <code>False</code> if the process exited normally, <code>True</code> if the process was
+  terminated by <code>ProcessWrapperWithTimeout</code></li>
+</ul>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ProcessError</span><span class="hljs-params">(Exception)</span>:</span>
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, proc)</span>:</span>
+        self.data = {
+            <span class="hljs-string">"returncode"</span>: proc.returncode,
+            <span class="hljs-string">"cmdline"</span>: proc.cmdline,
+            <span class="hljs-string">"stderr"</span>: proc.stderr.read()
+            }
+
+        <span class="hljs-keyword">if</span> hasattr(proc, <span class="hljs-string">"timeout"</span>):
+            self.data.update(timeout=proc.timeout,
+                             timed_out=proc.timed_out)
+            msg = <span class="hljs-string">"Process timed out after {} seconds"</span>.format(self.data[<span class="hljs-string">"timeout"</span>])
+        <span class="hljs-keyword">else</span>:
+            msg = <span class="hljs-string">"Process exited with code {}"</span>.format(self.data[<span class="hljs-string">"returncode"</span>])
+
+        super(ProcessError, self).__init__(msg)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <h2 id="process-wrapper">Process Wrapper</h2>
+<p>A thin wrapper around the <code>Popen</code> object returned by <code>subprocess</code> calls.
+This class is initialized with a <code>Popen</code> object and the <code>cmdline</code> (command line)
+that was used to invoke it.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ProcessWrapper</span><span class="hljs-params">(object)</span>:</span>
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, proc, cmdline)</span>:</span>
+        self.proc = proc
+        self.cmdline = cmdline
+
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__getattr__</span><span class="hljs-params">(self, attr)</span>:</span>
+        <span class="hljs-keyword">return</span> getattr(self.proc, attr)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <h3 id="check">check</h3>
+<p>Waits for the process to exit and raises a <code>ProcessError</code> if
+the process returned an exit code other than <code>0</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">check</span><span class="hljs-params">(self)</span>:</span>
+        self.wait()
+        <span class="hljs-keyword">if</span> self.returncode:
+            <span class="hljs-keyword">raise</span> ProcessError(self)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <h2 id="process-wrapper-with-timeout">Process Wrapper With Timeout</h2>
+<p>Provides timeout facilities to <code>ProcessWrapper</code> in the form of a sentinel thread.
+Accepts the same arguments as <code>ProcessWrapper</code> with the addition of a <code>timeout</code>
+argument. <code>timeout</code> is an integer value representing the number of seconds to wait
+until terminating the subprocess.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ProcessWrapperWithTimeout</span><span class="hljs-params">(Thread, ProcessWrapper)</span>:</span>
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, proc, cmdline, timeout)</span>:</span>
+        Thread.__init__(self)
+        ProcessWrapper.__init__(self, proc, cmdline)
+        self._timeout_event = Event()
+        self.timeout = timeout
+        self.daemon = <span class="hljs-keyword">True</span>
+        self.start()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <h4 id="timed_out">timed_out</h4>
+<p><code>False</code> if the process is still running, or if it exited normally.
+<code>True</code> if the process timed out and the sentinel thread attempted to terminate it.
+_Note: Since the sentinel thread does not <code>wait()</code> for the process to complete
+before setting the <code>timed_out</code> property, it is possible that <code>timed_out</code> will
+be <code>False</code> for a short period even before the subprocess has exited.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-decorator">@property</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">timed_out</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-keyword">return</span> self.proc.poll() <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">None</span> <span class="hljs-keyword">and</span> self._timeout_event.is_set()
+
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">run</span><span class="hljs-params">(self)</span>:</span>
+       sleep(self.timeout)
+       <span class="hljs-keyword">if</span> self.poll() <span class="hljs-keyword">is</span> <span class="hljs-keyword">None</span>:
+           self._timeout_event.set()
+           self.terminate()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <h2 id="subprocesshelper">SubprocessHelper</h2>
+<p>A wrapper for subprocesses.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SubprocessHelper</span><span class="hljs-params">(object)</span>:</span>
+
+    DEFAULT_OPTIONS = {
+        <span class="hljs-string">"stderr"</span>: PIPE,
+        <span class="hljs-string">"stdout"</span>: PIPE
+    }
+
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, command, options, arguments)</span>:</span>
+        self.command = command
+        self.options = options
+        self.arguments = list(arguments)
+
+
+    <span class="hljs-decorator">@classmethod</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_get_options</span><span class="hljs-params">(cls, kwargs, defaults=None)</span>:</span>
+        <span class="hljs-keyword">return</span> dict(
+                defaults <span class="hljs-keyword">or</span> cls.DEFAULT_OPTIONS,
+                **remap(pluck(kwargs, <span class="hljs-string">"_cwd"</span>, <span class="hljs-string">"_env"</span>, <span class="hljs-string">"_timeout"</span>), _strip_underscore))</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <h3 id="create">create</h3>
+<p>Constructor for <code>SubprocessHelper</code></p>
+<p>Example:</p>
+<pre><code>sh = SubprocessHelper.create(<span class="hljs-string">"ls"</span>, <span class="hljs-string">"*.py"</span>, l=<span class="hljs-keyword">True</span>)
+print(sh.cmdline) <span class="hljs-comment"># prints "['ls', '-l', '*.py']</span>
+</code></pre>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-decorator">@classmethod</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">create</span><span class="hljs-params">(cls, command, *args, **kwargs)</span>:</span>
+        <span class="hljs-keyword">return</span> cls(command, cls._get_options(kwargs), [Arguments(args, kwargs)])</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <h3 id="add">add</h3>
+<p>Add additional positional and keyword arguments to the helper</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">add</span><span class="hljs-params">(self, *args, **kwargs)</span>:</span>
+        top = self.arguments[-<span class="hljs-number">1</span>]
+        self.options = self._get_options(kwargs, self.options)
+        self.arguments[-<span class="hljs-number">1</span>] = Arguments(top.args + args, dict(top.kwargs, **kwargs))</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <h3 id="bake">bake</h3>
+<p>Allows the extension of <code>SubprocessHelper</code> objects with subcommands. This 
+method exists so that keyword arguments are properly located <em>after</em> their
+respective subcommands.</p>
+<p>Example:</p>
+<pre><code>sh = SubprocessHelper.create(<span class="hljs-string">"cvs"</span>, n=<span class="hljs-keyword">True</span>, q=<span class="hljs-keyword">True</span>)
+sh.add(<span class="hljs-string">"update"</span>, C=<span class="hljs-keyword">True</span>)
+print(sh.cmdline) <span class="hljs-comment"># prints "['cvs', '-n', '-q', '-C', 'update']"</span>
+
+sh = SubprocessHelper.create(<span class="hljs-string">"cvs"</span>, n=<span class="hljs-keyword">True</span>, q=<span class="hljs-keyword">True</span>)
+sh2 = sh.bake(<span class="hljs-string">"update"</span>).bake(C=<span class="hljs-keyword">True</span>)
+print(sh2.cmdline) <span class="hljs-comment"># prints "['cvs', '-n', '-q', 'update', '-C']"</span>
+</code></pre>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">bake</span><span class="hljs-params">(self, *args, **kwargs)</span>:</span>
+        i = self.__class__(
+                self.command, 
+                self._get_options(kwargs, self.options),
+                self.arguments)
+
+        <span class="hljs-keyword">if</span> args <span class="hljs-keyword">or</span> kwargs:
+            i.arguments.append(Arguments(args, kwargs))
+
+        <span class="hljs-keyword">return</span> i</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <h3 id="copy">copy</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">copy</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-keyword">return</span> self.bake()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <h3 id="subcommand">subcommand</h3>
+<p>Allows the addition of a subcommand</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">subcommand</span><span class="hljs-params">(self, command, *args, **kwargs)</span>:</span>
+        sub = self.__class__.create(command, *args, **kwargs)
+        i = self.copy()
+        i.arguments.append(sub)
+        <span class="hljs-keyword">return</span> i</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <h3 id="resolve_parameter">resolve_parameter</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-decorator">@staticmethod</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_resolve_parameter</span><span class="hljs-params">(param)</span>:</span>
+        <span class="hljs-keyword">if</span> param.startswith(<span class="hljs-string">"__"</span>):
+            <span class="hljs-keyword">return</span> <span class="hljs-string">"--{}"</span>.format(param[<span class="hljs-number">2</span>:])
+        <span class="hljs-keyword">elif</span> param.startswith(<span class="hljs-string">"_"</span>):
+            <span class="hljs-keyword">return</span> <span class="hljs-string">"-{}"</span>.format(param[<span class="hljs-number">1</span>:])
+        <span class="hljs-keyword">elif</span> len(param) == <span class="hljs-number">1</span>:
+            <span class="hljs-keyword">return</span> <span class="hljs-string">"-{}"</span>.format(param)
+        <span class="hljs-keyword">else</span>:
+            <span class="hljs-keyword">return</span> <span class="hljs-string">"--{}"</span>.format(param)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <h3 id="get_cmdline">get_cmdline</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-decorator">@classmethod</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_get_cmdline</span><span class="hljs-params">(cls, command, arguments)</span>:</span>
+        cmdline = [command]
+        <span class="hljs-keyword">for</span> obj <span class="hljs-keyword">in</span> arguments:
+            <span class="hljs-keyword">if</span> isinstance(obj, Arguments):
+                <span class="hljs-keyword">for</span> key, value <span class="hljs-keyword">in</span> obj.kwargs.items():
+                    <span class="hljs-keyword">if</span> value <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">None</span>:
+                        param = cls._resolve_parameter(key)
+                        cmdline.append(param)
+                        <span class="hljs-keyword">if</span> value <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-keyword">True</span>:
+                            cmdline.append(str(value))
+
+                cmdline.extend(obj.args)
+            <span class="hljs-keyword">elif</span> isinstance(obj, cls):
+                cmdline.extend(obj.cmdline)
+
+        <span class="hljs-keyword">return</span> cmdline</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <h3 id="cmdline">cmdline</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-decorator">@property</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmdline</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-keyword">return</span> self._get_cmdline(self.command, self.arguments)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <h3 id="call">call</h3>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">call</span><span class="hljs-params">(self, *args, **kwargs)</span>:</span>
+        options = self._get_options(kwargs, self.options)
+        cmdline = self._get_cmdline(
+                self.command,
+                self.arguments + [Arguments(args, kwargs)])
+
+        timeout = options.pop(<span class="hljs-string">"timeout"</span>, <span class="hljs-keyword">None</span>)
+        <span class="hljs-keyword">if</span> timeout:
+            <span class="hljs-keyword">return</span> ProcessWrapperWithTimeout(
+                    Popen(cmdline, **options),
+                    cmdline,
+                    timeout)
+        <span class="hljs-keyword">else</span>:
+            <span class="hljs-keyword">return</span> ProcessWrapper(
+                    Popen(cmdline, **options),
+                    cmdline)</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
