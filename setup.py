@@ -8,6 +8,6 @@ setup(
     description="Utilities for wrapping shell commands",
     author="Joel Cornett",
     author_email="joel.cornett@gmail.com",
-    url="",
+    url="https://github.com/jncornett/shellwrap",
     py_modules=["shellwrap"]
     )
